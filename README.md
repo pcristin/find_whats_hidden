@@ -8,6 +8,8 @@ A fast and efficient CLI tool for discovering hidden files and directories in yo
 - 🚀 Fast file system traversal
 - 💻 Cross-platform support (Windows, macOS, Linux)
 - 🎯 Simple and intuitive CLI interface
+- 🎨 Colored output for better readability
+- 📊 File size and modification time display
 
 ## Installation
 
@@ -32,8 +34,14 @@ go build -o find_whats_hidden
 # Search in specific directory
 ./find_whats_hidden -dir=/home/user/documents
 
+# Verbose output with file sizes and dates
+./find_whats_hidden -v
+
+# Disable colored output
+./find_whats_hidden -no-color
+
 # Using go run
-go run main.go -dir=/path/to/search
+go run main.go -dir=/path/to/search -v
 ```
 
 ## What are hidden files?
