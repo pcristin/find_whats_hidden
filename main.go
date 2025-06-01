@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 const (
@@ -17,6 +19,25 @@ const (
 	ColorPurple = "\033[35m"
 	ColorCyan   = "\033[36m"
 )
+
+// FileInfo represents information about a hidden file
+type FileInfo struct {
+	Path     string    `json:"path"`
+	Type     string    `json:"type"`
+	Size     int64     `json:"size"`
+	Modified time.Time `json:"modified"`
+}
+
+// ScanResult represents the complete scan results
+type ScanResult struct {
+	Directory    string     `json:"directory"`
+	HiddenFiles  []FileInfo `json:"hidden_files"`
+	TotalCount   int        `json:"total_count"`
+	TotalSize    int64      `json:"total_size"`
+	IgnoredCount int        `json:"ignored_count"`
+	ErrorCount   int        `json:"error_count"`
+	ScanTime     time.Time  `json:"scan_time"`
+}
 
 // formatSize converts bytes to human readable format
 func formatSize(size int64) string {
@@ -90,18 +111,19 @@ func validateDirectory(path string) error {
 }
 
 // findHiddenFiles walks the directory tree and finds hidden files
-func findHiddenFiles(root string, noColor bool, verbose bool, ignorePatterns []string) error {
+func findHiddenFiles(root string, noColor bool, verbose bool, ignorePatterns []string, jsonOutput bool) error {
 	count := 0
 	totalSize := int64(0)
 	ignored := 0
 	errors := 0
+	var hiddenFiles []FileInfo
 
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			// Don't stop walking on permission errors
 			if os.IsPermission(err) {
 				errors++
-				if verbose {
+				if verbose && !jsonOutput {
 					fmt.Fprintf(os.Stderr, "%sPermission denied: %s%s\n", ColorRed, path, ColorReset)
 				}
 				return nil
@@ -123,7 +145,21 @@ func findHiddenFiles(root string, noColor bool, verbose bool, ignorePatterns []s
 
 			count++
 			totalSize += info.Size()
-			printFileInfo(path, info, noColor, verbose)
+
+			if jsonOutput {
+				fileType := "file"
+				if info.IsDir() {
+					fileType = "directory"
+				}
+				hiddenFiles = append(hiddenFiles, FileInfo{
+					Path:     path,
+					Type:     fileType,
+					Size:     info.Size(),
+					Modified: info.ModTime(),
+				})
+			} else {
+				printFileInfo(path, info, noColor, verbose)
+			}
 		}
 
 		return nil
@@ -131,6 +167,22 @@ func findHiddenFiles(root string, noColor bool, verbose bool, ignorePatterns []s
 
 	if err != nil {
 		return fmt.Errorf("error walking directory: %v", err)
+	}
+
+	if jsonOutput {
+		result := ScanResult{
+			Directory:    root,
+			HiddenFiles:  hiddenFiles,
+			TotalCount:   count,
+			TotalSize:    totalSize,
+			IgnoredCount: ignored,
+			ErrorCount:   errors,
+			ScanTime:     time.Now(),
+		}
+
+		encoder := json.NewEncoder(os.Stdout)
+		encoder.SetIndent("", "  ")
+		return encoder.Encode(result)
 	}
 
 	// Print summary
@@ -166,11 +218,13 @@ func main() {
 	var noColor bool
 	var verbose bool
 	var ignoreFlag string
+	var jsonOutput bool
 
 	flag.StringVar(&dir, "dir", ".", "Directory to search")
 	flag.BoolVar(&noColor, "no-color", false, "Disable colored output")
 	flag.BoolVar(&verbose, "v", false, "Verbose output (show size and modification time)")
 	flag.StringVar(&ignoreFlag, "ignore", "", "Comma-separated list of patterns to ignore (e.g., '.git,.DS_Store')")
+	flag.BoolVar(&jsonOutput, "json", false, "Output results in JSON format")
 	flag.Parse()
 
 	// Validate directory
@@ -189,13 +243,15 @@ func main() {
 		}
 	}
 
-	fmt.Printf("Searching for hidden files in: %s\n", dir)
-	if len(ignorePatterns) > 0 {
-		fmt.Printf("Ignoring patterns: %v\n", ignorePatterns)
+	if !jsonOutput {
+		fmt.Printf("Searching for hidden files in: %s\n", dir)
+		if len(ignorePatterns) > 0 {
+			fmt.Printf("Ignoring patterns: %v\n", ignorePatterns)
+		}
+		fmt.Println()
 	}
-	fmt.Println()
 
-	if err := findHiddenFiles(dir, noColor, verbose, ignorePatterns); err != nil {
+	if err := findHiddenFiles(dir, noColor, verbose, ignorePatterns, jsonOutput); err != nil {
 		fmt.Fprintf(os.Stderr, "%sError: %v%s\n", ColorRed, err, ColorReset)
 		os.Exit(1)
 	}
