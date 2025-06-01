@@ -75,7 +75,6 @@ func findHiddenFiles(root string, noColor bool, verbose bool) error {
 		if strings.HasPrefix(info.Name(), ".") && info.Name() != "." {
 			count++
 			totalSize += info.Size()
-			// https://imgur.com/a/JNEhhwT
 			printFileInfo(path, info, noColor, verbose)
 		}
 
