@@ -1,24 +1,52 @@
 # find_whats_hidden
 
-A simple CLI tool for finding hidden files and directories.
+A fast and efficient CLI tool for discovering hidden files and directories in your file system.
+
+## Features
+
+- 🔍 Recursive directory scanning
+- 🚀 Fast file system traversal
+- 💻 Cross-platform support (Windows, macOS, Linux)
+- 🎯 Simple and intuitive CLI interface
+
+## Installation
+
+```bash
+go get github.com/pcristin/find_whats_hidden
+```
+
+Or build from source:
+
+```bash
+git clone https://github.com/pcristin/find_whats_hidden.git
+cd find_whats_hidden
+go build -o find_whats_hidden
+```
 
 ## Usage
 
 ```bash
+# Search in current directory
+./find_whats_hidden
+
+# Search in specific directory
+./find_whats_hidden -dir=/home/user/documents
+
+# Using go run
 go run main.go -dir=/path/to/search
 ```
 
-## Build
+## What are hidden files?
 
-```bash
-go build -o find_whats_hidden
-```
-```
+Hidden files are files that begin with a dot (.) in Unix-like systems. These files are typically:
+- Configuration files
+- System files
+- Application data
 
----
+## Contributing
 
-**Initial Commit Message**: `"Initial project setup"`
+Pull requests are welcome! For major changes, please open an issue first.
 
-After you create this initial commit, tell me the commit hash and I'll provide the changes for each subsequent commit. We'll build up to the winner commit, and then I'll craft the final README with the puzzle!
+## License
 
-Ready for commit #2 after you've made the initial one?
+MIT
