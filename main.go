@@ -72,15 +72,46 @@ func printFileInfo(path string, info os.FileInfo, noColor bool, verbose bool) {
 	fmt.Println()
 }
 
+// validateDirectory checks if the given path exists and is a directory
+func validateDirectory(path string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("directory does not exist: %s", path)
+		}
+		return fmt.Errorf("error accessing directory: %v", err)
+	}
+
+	if !info.IsDir() {
+		return fmt.Errorf("path is not a directory: %s", path)
+	}
+
+	return nil
+}
+
 // findHiddenFiles walks the directory tree and finds hidden files
 func findHiddenFiles(root string, noColor bool, verbose bool, ignorePatterns []string) error {
 	count := 0
 	totalSize := int64(0)
 	ignored := 0
+	errors := 0
 
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			// Don't stop walking on permission errors
+			if os.IsPermission(err) {
+				errors++
+				if verbose {
+					fmt.Fprintf(os.Stderr, "%sPermission denied: %s%s\n", ColorRed, path, ColorReset)
+				}
+				return nil
+			}
 			return err
+		}
+
+		// Skip if info is nil
+		if info == nil {
+			return nil
 		}
 
 		// Check if file/directory is hidden
@@ -99,7 +130,7 @@ func findHiddenFiles(root string, noColor bool, verbose bool, ignorePatterns []s
 	})
 
 	if err != nil {
-		return err
+		return fmt.Errorf("error walking directory: %v", err)
 	}
 
 	// Print summary
@@ -108,6 +139,9 @@ func findHiddenFiles(root string, noColor bool, verbose bool, ignorePatterns []s
 		if ignored > 0 {
 			fmt.Printf("Ignored items: %d\n", ignored)
 		}
+		if errors > 0 {
+			fmt.Printf("Permission errors: %d\n", errors)
+		}
 		if verbose {
 			fmt.Printf("Total size: %s\n", formatSize(totalSize))
 		}
@@ -115,6 +149,9 @@ func findHiddenFiles(root string, noColor bool, verbose bool, ignorePatterns []s
 		fmt.Printf("\n%sTotal hidden items found: %s%d%s\n", ColorGreen, ColorYellow, count, ColorReset)
 		if ignored > 0 {
 			fmt.Printf("%sIgnored items: %s%d%s\n", ColorRed, ColorYellow, ignored, ColorReset)
+		}
+		if errors > 0 {
+			fmt.Printf("%sPermission errors: %s%d%s\n", ColorRed, ColorYellow, errors, ColorReset)
 		}
 		if verbose {
 			fmt.Printf("%sTotal size: %s%s%s\n", ColorGreen, ColorYellow, formatSize(totalSize), ColorReset)
@@ -136,10 +173,20 @@ func main() {
 	flag.StringVar(&ignoreFlag, "ignore", "", "Comma-separated list of patterns to ignore (e.g., '.git,.DS_Store')")
 	flag.Parse()
 
+	// Validate directory
+	if err := validateDirectory(dir); err != nil {
+		fmt.Fprintf(os.Stderr, "%sError: %v%s\n", ColorRed, err, ColorReset)
+		os.Exit(1)
+	}
+
 	// Parse ignore patterns
 	var ignorePatterns []string
 	if ignoreFlag != "" {
 		ignorePatterns = strings.Split(ignoreFlag, ",")
+		// Trim whitespace from patterns
+		for i := range ignorePatterns {
+			ignorePatterns[i] = strings.TrimSpace(ignorePatterns[i])
+		}
 	}
 
 	fmt.Printf("Searching for hidden files in: %s\n", dir)
@@ -149,7 +196,7 @@ func main() {
 	fmt.Println()
 
 	if err := findHiddenFiles(dir, noColor, verbose, ignorePatterns); err != nil {
-		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		fmt.Fprintf(os.Stderr, "%sError: %v%s\n", ColorRed, err, ColorReset)
 		os.Exit(1)
 	}
 }
