@@ -15,16 +15,38 @@ A fast and efficient CLI tool for discovering hidden files and directories in yo
 
 ## Installation
 
-```bash
-go get github.com/pcristin/find_whats_hidden
-```
-
-Or build from source:
+### From Source
 
 ```bash
 git clone https://github.com/pcristin/find_whats_hidden.git
 cd find_whats_hidden
-go build -o find_whats_hidden
+make build
+```
+
+### Using Go
+
+```bash
+go get github.com/pcristin/find_whats_hidden
+```
+
+### Pre-built Binaries
+
+Download pre-built binaries from the [releases page](https://github.com/pcristin/find_whats_hidden/releases).
+
+## Building
+
+```bash
+# Build for current platform
+make build
+
+# Build for all platforms
+make build-all
+
+# Run tests
+make test
+
+# Clean build artifacts
+make clean
 ```
 
 ## Usage
