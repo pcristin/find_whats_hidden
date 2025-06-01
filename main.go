@@ -18,6 +18,7 @@ const (
 	ColorCyan   = "\033[36m"
 )
 
+// formatSize converts bytes to human readable format
 func formatSize(size int64) string {
 	const unit = 1024
 	if size < unit {
@@ -31,6 +32,36 @@ func formatSize(size int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(size)/float64(div), "KMGTPE"[exp])
 }
 
+// printFileInfo prints formatted file information
+func printFileInfo(path string, info os.FileInfo, noColor bool, verbose bool) {
+	if info.IsDir() {
+		if noColor {
+			fmt.Printf("[DIR]  %s", path)
+		} else {
+			fmt.Printf("%s[DIR]%s  %s%s%s", ColorBlue, ColorReset, ColorYellow, path, ColorReset)
+		}
+	} else {
+		if noColor {
+			fmt.Printf("[FILE] %s", path)
+		} else {
+			fmt.Printf("%s[FILE]%s %s%s%s", ColorGreen, ColorReset, ColorPurple, path, ColorReset)
+		}
+	}
+
+	if verbose {
+		modTime := info.ModTime().Format("2006-01-02 15:04")
+		size := formatSize(info.Size())
+		if noColor {
+			fmt.Printf(" (Size: %s, Modified: %s)", size, modTime)
+		} else {
+			fmt.Printf(" %s(Size: %s, Modified: %s)%s", ColorCyan, size, modTime, ColorReset)
+		}
+	}
+
+	fmt.Println()
+}
+
+// findHiddenFiles walks the directory tree and finds hidden files
 func findHiddenFiles(root string, noColor bool, verbose bool) error {
 	count := 0
 	totalSize := int64(0)
@@ -44,32 +75,8 @@ func findHiddenFiles(root string, noColor bool, verbose bool) error {
 		if strings.HasPrefix(info.Name(), ".") && info.Name() != "." {
 			count++
 			totalSize += info.Size()
-
-			if info.IsDir() {
-				if noColor {
-					fmt.Printf("[DIR]  %s", path)
-				} else {
-					fmt.Printf("%s[DIR]%s  %s%s%s", ColorBlue, ColorReset, ColorYellow, path, ColorReset)
-				}
-			} else {
-				if noColor {
-					fmt.Printf("[FILE] %s", path)
-				} else {
-					fmt.Printf("%s[FILE]%s %s%s%s", ColorGreen, ColorReset, ColorPurple, path, ColorReset)
-				}
-			}
-
-			if verbose {
-				modTime := info.ModTime().Format("2006-01-02 15:04")
-				size := formatSize(info.Size())
-				if noColor {
-					fmt.Printf(" (Size: %s, Modified: %s)", size, modTime)
-				} else {
-					fmt.Printf(" %s(Size: %s, Modified: %s)%s", ColorCyan, size, modTime, ColorReset)
-				}
-			}
-
-			fmt.Println()
+			// https://imgur.com/a/JNEhhwT
+			printFileInfo(path, info, noColor, verbose)
 		}
 
 		return nil
@@ -79,6 +86,7 @@ func findHiddenFiles(root string, noColor bool, verbose bool) error {
 		return err
 	}
 
+	// Print summary
 	if noColor {
 		fmt.Printf("\nTotal hidden items found: %d\n", count)
 		if verbose {
