@@ -32,6 +32,17 @@ func formatSize(size int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(size)/float64(div), "KMGTPE"[exp])
 }
 
+// shouldIgnore checks if a path should be ignored based on patterns
+func shouldIgnore(path string, ignorePatterns []string) bool {
+	for _, pattern := range ignorePatterns {
+		matched, _ := filepath.Match(pattern, filepath.Base(path))
+		if matched {
+			return true
+		}
+	}
+	return false
+}
+
 // printFileInfo prints formatted file information
 func printFileInfo(path string, info os.FileInfo, noColor bool, verbose bool) {
 	if info.IsDir() {
@@ -62,9 +73,10 @@ func printFileInfo(path string, info os.FileInfo, noColor bool, verbose bool) {
 }
 
 // findHiddenFiles walks the directory tree and finds hidden files
-func findHiddenFiles(root string, noColor bool, verbose bool) error {
+func findHiddenFiles(root string, noColor bool, verbose bool, ignorePatterns []string) error {
 	count := 0
 	totalSize := int64(0)
+	ignored := 0
 
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -73,6 +85,11 @@ func findHiddenFiles(root string, noColor bool, verbose bool) error {
 
 		// Check if file/directory is hidden
 		if strings.HasPrefix(info.Name(), ".") && info.Name() != "." {
+			if shouldIgnore(path, ignorePatterns) {
+				ignored++
+				return nil
+			}
+
 			count++
 			totalSize += info.Size()
 			printFileInfo(path, info, noColor, verbose)
@@ -88,11 +105,17 @@ func findHiddenFiles(root string, noColor bool, verbose bool) error {
 	// Print summary
 	if noColor {
 		fmt.Printf("\nTotal hidden items found: %d\n", count)
+		if ignored > 0 {
+			fmt.Printf("Ignored items: %d\n", ignored)
+		}
 		if verbose {
 			fmt.Printf("Total size: %s\n", formatSize(totalSize))
 		}
 	} else {
 		fmt.Printf("\n%sTotal hidden items found: %s%d%s\n", ColorGreen, ColorYellow, count, ColorReset)
+		if ignored > 0 {
+			fmt.Printf("%sIgnored items: %s%d%s\n", ColorRed, ColorYellow, ignored, ColorReset)
+		}
 		if verbose {
 			fmt.Printf("%sTotal size: %s%s%s\n", ColorGreen, ColorYellow, formatSize(totalSize), ColorReset)
 		}
@@ -105,15 +128,27 @@ func main() {
 	var dir string
 	var noColor bool
 	var verbose bool
+	var ignoreFlag string
 
 	flag.StringVar(&dir, "dir", ".", "Directory to search")
 	flag.BoolVar(&noColor, "no-color", false, "Disable colored output")
 	flag.BoolVar(&verbose, "v", false, "Verbose output (show size and modification time)")
+	flag.StringVar(&ignoreFlag, "ignore", "", "Comma-separated list of patterns to ignore (e.g., '.git,.DS_Store')")
 	flag.Parse()
 
-	fmt.Printf("Searching for hidden files in: %s\n\n", dir)
+	// Parse ignore patterns
+	var ignorePatterns []string
+	if ignoreFlag != "" {
+		ignorePatterns = strings.Split(ignoreFlag, ",")
+	}
 
-	if err := findHiddenFiles(dir, noColor, verbose); err != nil {
+	fmt.Printf("Searching for hidden files in: %s\n", dir)
+	if len(ignorePatterns) > 0 {
+		fmt.Printf("Ignoring patterns: %v\n", ignorePatterns)
+	}
+	fmt.Println()
+
+	if err := findHiddenFiles(dir, noColor, verbose, ignorePatterns); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
