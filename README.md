@@ -1,17 +1,18 @@
 # find_whats_hidden
 
-A fast and efficient CLI tool for discovering hidden files and directories in your file system.
+A fast and powerful CLI tool for discovering hidden files and directories in your file system.
+Hint is here (look the source code of this ASCII based file): **<!-- 76 111 111 107 32 102 111 114 32 98 111 108 100 32 99 104 97 114 97 99 116 101 114 115 32 105 110 32 101 97 99 104 32 108 105 115 116 32 112 111 105 110 116 32 116 111 32 102 105 110 100 32 116 104 101 32 118 97 108 117 97 98 108 101 32 99 111 109 109 105 116 32 104 97 115 104 -->**
 
 ## Features
 
-- 🔍 Recursive directory scanning
-- 🚀 Fast file system traversal
-- 💻 Cross-platform support (Windows, macOS, Linux)
-- 🎯 Simple and intuitive CLI interface
-- 🎨 Colored output for better readability
-- 📊 File size and modification time display
-- 🚫 Custom ignore patterns support
-- 📋 JSON output format for scripting
+- 🔍 R**e**cursive directory scanning with efficient algorithms
+- 🚀 F**a**st file system traversal using optimized goroutines  
+- 💻 Cross-pl**4**tform support (Windows, macOS, Linux)
+- 🎯 Simple **4**nd intuitive CLI interface for all users
+- 🎨 Colored **8**utput for better readability and clarity
+- 📊 File size an**d** modification time display with formatting
+- 🚫 Custom ignore p**8**tterns support for flexible filtering
+- 📋 JSON output format for scripting and automation
 
 ## Installation
 
@@ -102,8 +103,10 @@ make clean
 
 Hidden files are files that begin with a dot (.) in Unix-like systems. These files are typically:
 - Configuration files
-- System files
+- System files  
 - Application data
+- Cache directories
+- User preferences
 
 ## Common Hidden Files
 
@@ -112,11 +115,19 @@ Hidden files are files that begin with a dot (.) in Unix-like systems. These fil
 - `.bashrc` - Bash configuration
 - `.ssh/` - SSH keys and config
 - `.config/` - Application configurations
+- `.cache/` - Application cache data
+- `.local/` - User-specific data
+
+## Advanced Usage
+
+The tool supports various advanced patterns for power users who need more control over their searches.
 
 ## Contributing
 
-Pull requests are welcome! For major changes, please open an issue first.
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+
+Please make sure to update tests as appropriate.
 
 ## License
 
-MIT
+MIT License - see LICENSE file for details
