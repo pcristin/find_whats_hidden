@@ -1,0 +1,15 @@
+# Binaries
+*.exe
+*.dll
+*.so
+*.dylib
+find_whats_hidden
+
+# Test binary
+*.test
+
+# Output
+*.out
+
+# Dependency directories
+vendor/
